@@ -5,15 +5,22 @@ import type { DecodedToken } from "./interfaces";
 export function decodeToken(): DecodedToken {
     const token = Cookies.get("token");
     if (!token) {
-        return { email: "", exp: 0, iat: 0, sub: "", role: "" };
+        return {
+            email: "",
+            iat: 0,
+            exp: 0,
+            role: "",
+            sub: 0,
+        };
     }
-    return jwtDecode<DecodedToken>(token);
+    const decoded = jwtDecode<DecodedToken>(token);
+    return decoded;
 }
 
-export function getIsAdmin() {
+export function getIsAdmin(): boolean {
     return decodeToken().role === "ADMIN";
 }
 
-export function getIsUser() {
+export function getIsUser(): boolean {
     return decodeToken().role === "USER";
 }

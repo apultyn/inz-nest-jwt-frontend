@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Review, SpringError } from "../utils/interfaces";
+import type { Review, NestError, ReviewUpdateReq } from "../utils/interfaces";
 import { getIsAdmin } from "../utils/token";
 import DeleteReview from "./DeleteReview";
 import api from "../utils/api";
@@ -22,7 +22,7 @@ export default function ReviewComponent({
     const [comment, setComment] = useState("");
 
     const [error, setError] = useState("");
-    const [violations, setViolations] = useState<SpringError["violations"]>();
+    const [violations, setViolations] = useState<string[]>();
 
     const isAdmin = getIsAdmin();
 
@@ -47,19 +47,28 @@ export default function ReviewComponent({
     }, [fetchReview]);
 
     const handleSave = async () => {
+        setError("");
+        setViolations([]);
         if (!review) return;
         setIsSubmitting(true);
         try {
-            setReview({ ...review, stars, comment });
-            await api.patch(`/reviews/${reviewId}`, { stars, comment });
+            const req: ReviewUpdateReq = { stars, comment };
+            await api.patch(`/reviews/${reviewId}`, req);
             setIsEditing(false);
+            setReview({ ...review, stars, comment });
             fetchBook();
         } catch (error) {
-            if (axios.isAxiosError<SpringError>(error) && error.response) {
-                if (error.response.data.violations) {
-                    setViolations(error.response.data.violations);
-                } else if (error.response.data.detail) {
-                    setError(error.response.data.detail);
+            if (
+                axios.isAxiosError<NestError>(error) &&
+                error.response &&
+                error.status === 400
+            ) {
+                const errorData: NestError = error.response.data;
+
+                if (Array.isArray(errorData.message)) {
+                    setViolations(errorData.message);
+                } else {
+                    setError(errorData.message);
                 }
             } else {
                 setError("Something went wrong...");

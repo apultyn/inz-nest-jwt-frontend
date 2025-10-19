@@ -19,7 +19,6 @@ export default function BookReviewsPage() {
     const fetchBook = useCallback(async () => {
         try {
             const response = await api.get(`/books/${bookId}`);
-            console.log(response);
             setBook(response.data);
         } catch (error) {
             console.error(error);

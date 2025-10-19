@@ -4,12 +4,18 @@ import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import TopBar from "../components/TopBar";
 import axios from "axios";
+import {
+    type NestError,
+    type LoginRes,
+    type LoginReq,
+} from "../utils/interfaces";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLogging, setIsLogging] = useState(false);
     const [error, setError] = useState("");
+    const [violations, setViolations] = useState<string[]>();
 
     const navigate = useNavigate();
 
@@ -17,10 +23,10 @@ export default function LoginPage() {
         e.preventDefault();
         setIsLogging(true);
         setError("");
+        setViolations([]);
         try {
-            const response = await api.post("/auth/login", { email, password });
-
-            console.log(response);
+            const req: LoginReq = { email, password };
+            const response = await api.post<LoginRes>("/auth/login", req);
 
             Cookies.set("token", response.data.access_token, {
                 secure: true,
@@ -30,12 +36,20 @@ export default function LoginPage() {
 
             navigate("/");
         } catch (error) {
-            if (
-                axios.isAxiosError(error) &&
-                error.response &&
-                error.response.data
-            ) {
-                setError(error.response.data.description);
+            if (axios.isAxiosError<NestError>(error) && error.response) {
+                if (error.status === 400) {
+                    const errorData: NestError = error.response.data;
+
+                    if (Array.isArray(errorData.message)) {
+                        setViolations(errorData.message);
+                    } else {
+                        setError(errorData.message);
+                    }
+                } else if (error.status === 401) {
+                    setError("Invalid credentials");
+                } else {
+                    setError("Something went wrong...");
+                }
             } else {
                 setError("Something went wrong...");
             }
@@ -58,6 +72,15 @@ export default function LoginPage() {
                                 {error}
                             </p>
                         )}
+
+                        {violations?.map((v) => (
+                            <p
+                                key={v}
+                                className="text-sm font-medium text-red-600"
+                            >
+                                {v}
+                            </p>
+                        ))}
 
                         <input
                             type="email"
