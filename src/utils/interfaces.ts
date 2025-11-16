@@ -31,7 +31,9 @@ export interface DecodedToken {
     email: string;
     exp: number;
     iat: number;
-    role: string;
+    roles: {
+        roleName: string;
+    }[];
     sub: number;
 }
 

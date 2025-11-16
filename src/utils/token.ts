@@ -9,18 +9,31 @@ export function decodeToken(): DecodedToken {
             email: "",
             iat: 0,
             exp: 0,
-            role: "",
+            roles: [],
             sub: 0,
         };
     }
     const decoded = jwtDecode<DecodedToken>(token);
+    console.log(decoded);
     return decoded;
 }
 
+const RolesToStringArray = (
+    rolesFromToken: {
+        roleName: string;
+    }[]
+): string[] => {
+    if (!rolesFromToken) return [];
+
+    return rolesFromToken.map((role) => role.roleName);
+};
+
 export function getIsAdmin(): boolean {
-    return decodeToken().role === "ADMIN";
+    const roles = RolesToStringArray(decodeToken().roles);
+    return roles.includes("ADMIN");
 }
 
 export function getIsUser(): boolean {
-    return decodeToken().role === "USER";
+    const roles = RolesToStringArray(decodeToken().roles);
+    return roles.includes("USER");
 }
